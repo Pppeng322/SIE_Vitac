@@ -18,6 +18,6 @@ xArm Robotic Arm
   ```bash
   pip install -r requirements.txt
   ```
-Additional instructions for XARM
+Additional instructions for XArm
 
 https://github.com/xArm-Developer/xArm-Python-SDK
