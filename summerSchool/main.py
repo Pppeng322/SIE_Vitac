@@ -28,7 +28,7 @@ except Exception as e:
     sys.exit(1)
 
 #Read from Gelsight
-stream = init_gelsight(src=0)
+#stream = init_gelsight(src=0)
 
 # === Connect to robot ===
 arm = XArmAPI(ip)
@@ -37,8 +37,8 @@ arm.set_mode(0)
 arm.set_state(0)
 
 # change data collect to 1 in robot.conf for data collection
-if data_collect == 1:
-    setup_data_folder()
+# if data_collect == 1:
+#     setup_data_folder()
 
 # Get initial Pose
 origin = get_tcp_pose(arm)
@@ -50,11 +50,11 @@ poses = palpation_path(poses, up, down)
 move_along_path(arm, origin, poses, speed)
 
 
-grabbed, frame = stream.read()
-if grabbed:
-    cv2.imshow("Gelsight Frame", frame)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+# grabbed, frame = stream.read()
+# if grabbed:
+#     cv2.imshow("Gelsight Frame", frame)
+#     cv2.waitKey(0)
+#     cv2.destroyAllWindows()
 
 
 
