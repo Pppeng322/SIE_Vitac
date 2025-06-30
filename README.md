@@ -21,3 +21,7 @@ xArm Robotic Arm
 Additional instructions for XArm
 
 https://github.com/xArm-Developer/xArm-Python-SDK
+
+GUI control for Xarm
+
+https://www.ufactory.us/ufactory-studio?srsltid=AfmBOoqTGBiFZw2pwxMQdk8bHbbj4Zzrlm7rRNwwyrV_GEokr20RD4Hc
