@@ -8,8 +8,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 
 from utility.arm_utils import *
 from utility.utils import *
-from utility.gelsight import *
-
+from utility.gelsight import Gelsight
+camera = Gelsight(0).start()
 # === Read config file ===
 config_path = os.path.join(os.path.dirname(__file__), 'robot.conf')
 parser = configparser.ConfigParser()

@@ -3,6 +3,9 @@ import math
 from datetime import datetime
 import numpy as np
 
+from gelsight import Gelsight
+
+
 def setup_data_folder(base_path: str = None) -> str:
     """
     Creates a 'data' directory (if it doesn't exist), a timestamped subdirectory, and
@@ -50,8 +53,12 @@ def relative_to_origin(point, origin):
     """
     rel_x = point[0] - origin[0]
     rel_y = point[1] - origin[1]
-    z, rx, ry, rz = point[2], point[3], point[4], point[5]
-    return [rel_x, rel_y, z, rx, ry, rz]
+    rel_z = point[2] - origin[2]
+    rel_rx = point[3] - origin[3]
+    rel_ry = point[4] - origin[4]
+    rel_rz = point[5] - origin[5]
+
+    return [rel_x, rel_y, rel_z, rel_rx, rel_ry, rel_rz]
 
 
 def pixel_to_tcp(
