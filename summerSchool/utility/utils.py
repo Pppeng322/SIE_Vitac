@@ -1,7 +1,7 @@
 import os
 import math
 from datetime import datetime
-
+import numpy as np
 
 def setup_data_folder(base_path: str = None) -> str:
     """
@@ -39,6 +39,19 @@ def setup_data_folder(base_path: str = None) -> str:
     os.makedirs(image_dir, exist_ok=True)
 
     return timestamp
+
+
+def relative_to_origin(point, origin):
+    """
+    point: [x, y, z, rx, ry, rz]
+    origin: [x, y, z, rx, ry, rz]
+
+    Returns: [x - origin_x, y - origin_y, z, rx, ry, rz]
+    """
+    rel_x = point[0] - origin[0]
+    rel_y = point[1] - origin[1]
+    z, rx, ry, rz = point[2], point[3], point[4], point[5]
+    return [rel_x, rel_y, z, rx, ry, rz]
 
 
 def pixel_to_tcp(
@@ -149,3 +162,121 @@ def get_gelsight_frame(src=0):
         print(f"Error: failed to grab frame from camera {src}")
         return None
     return frame
+
+def generate_scan_path(corners, origin, rows, cols):
+    """
+    corners: list of 4 tuples (x,y,z,rx,ry,rz)
+        top_left, top_right, bottom_right, bottom_left
+    origin: tuple (x,y,z,rx,ry,rz) treated as (0,0)
+    rows, cols: grid size
+    returns: list of (x,y,z,rx,ry,rz) relative to origin
+    """
+
+    # Only use x, y
+    origin_x, origin_y = origin[0], origin[1]
+
+    # Extract only x,y for corners
+    tl = np.array([corners[0][0], corners[0][1]], dtype=np.float32)
+    tr = np.array([corners[1][0], corners[1][1]], dtype=np.float32)
+    br = np.array([corners[2][0], corners[2][1]], dtype=np.float32)
+    bl = np.array([corners[3][0], corners[3][1]], dtype=np.float32)
+
+    coords_list = []
+
+    for r in range(rows):
+        v = r / (rows - 1) if rows > 1 else 0.0
+
+        left_edge_point = tl * (1 - v) + bl * v
+        right_edge_point = tr * (1 - v) + br * v
+
+        row_points = []
+        for c in range(cols):
+            u = c / (cols - 1) if cols > 1 else 0.0
+            p = left_edge_point * (1 - u) + right_edge_point * u
+
+            # Shift relative to origin
+            rel_x = p[0] - origin_x
+            rel_y = p[1] - origin_y
+
+            # Add in (x,y,z,rx,ry,rz)
+            row_points.append( (rel_x, rel_y, 0, 0, 0, 0) )
+
+        # Snaking
+        if r % 2 == 0:
+            coords_list.extend(row_points)
+        else:
+            coords_list.extend(reversed(row_points))
+
+    return coords_list
+
+def find_corners(corners):
+    """
+    corners: list of 4 [x, y, z, rx, ry, rz]
+    returns: list of 4 [x, y, z, rx, ry, rz] in order:
+             top left, top right, bottom right, bottom left
+    """
+
+    if len(corners) != 4:
+        raise ValueError(f"Expected exactly 4 corners, but got {len(corners)}")
+
+    # Extract x and y
+    xs = [p[0] for p in corners]
+    ys = [p[1] for p in corners]
+
+    xs_sorted = sorted(xs)
+    ys_sorted = sorted(ys)
+
+    # Make sure there is range to define a rectangle
+    if len(set(xs)) < 2 or len(set(ys)) < 2:
+        raise ValueError("Corners do not define a valid area (all x or all y identical)")
+
+    left_x  = max(xs_sorted[0], xs_sorted[1])
+    right_x = min(xs_sorted[2], xs_sorted[3])
+
+    top_y    = max(ys_sorted[0], ys_sorted[1])
+    bottom_y = min(ys_sorted[2], ys_sorted[3])
+
+    # Use z, rx, ry, rz from the first point
+    z, rx, ry, rz = corners[0][2], corners[0][3], corners[0][4], corners[0][5]
+
+    # Return rectangle corners in required order
+    return [
+        [left_x,  top_y,    z, rx, ry, rz],  # top left
+        [right_x, top_y,    z, rx, ry, rz],  # top right
+        [right_x, bottom_y, z, rx, ry, rz],  # bottom right
+        [left_x,  bottom_y, z, rx, ry, rz]   # bottom left
+    ]
+
+
+import random
+
+
+def generate_noisy_rectangle_corners(origin, width, height, noise_range):
+    """
+    origin: [x, y, z, rx, ry, rz]
+    width: rectangle width along x
+    height: rectangle height along y
+    noise_range: maximum noise in mm (+/-)
+
+    Returns list of 4 corners:
+    [top left, top right, bottom right, bottom left]
+    Each as [x, y, z, rx, ry, rz]
+    """
+    ox, oy, oz, orx, ory, orz = origin
+
+    # Define ideal corners (before noise)
+    ideal_corners = [
+        [ox, oy],  # top left
+        [ox + width, oy],  # top right
+        [ox + width, oy + height],  # bottom right
+        [ox, oy + height]  # bottom left
+    ]
+
+    # Add noise to x and y
+    noisy_corners = []
+    for x, y in ideal_corners:
+        nx = x + random.uniform(-noise_range, noise_range)
+        ny = y + random.uniform(-noise_range, noise_range)
+        noisy_corners.append([nx, ny, oz, orx, ory, orz])
+
+    return noisy_corners

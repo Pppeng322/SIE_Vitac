@@ -44,8 +44,52 @@ arm.set_state(0)
 origin = get_tcp_pose(arm)
 print("Current TCP pose:", origin)
 
+print("Go to top left then press r.")
+corners = []
+while True:
+    user_input = input("Press r and Enter when ready: ").strip().lower()
+    if user_input == 'r':
+        break
 
-poses = circular_path_gen(10.0)
+# Call get_tcp_pose
+print(get_tcp_pose(arm))
+corners.append(get_tcp_pose(arm))
+print("Go to top right then press r.")
+
+while True:
+    user_input = input("Press r and Enter when ready: ").strip().lower()
+    if user_input == 'r':
+        break
+# Call get_tcp_pose
+print(get_tcp_pose(arm))
+corners.append(get_tcp_pose(arm))
+
+
+print("Go to bottom right then press r.")
+
+while True:
+    user_input = input("Press r and Enter when ready: ").strip().lower()
+    if user_input == 'r':
+        break
+# Call get_tcp_pose
+print(get_tcp_pose(arm))
+corners.append(get_tcp_pose(arm))
+
+
+print("Go to bottom left then press r.")
+
+while True:
+    user_input = input("Press r and Enter when ready: ").strip().lower()
+    if user_input == 'r':
+        break
+# Call get_tcp_pose
+print(get_tcp_pose(arm))
+corners.append(get_tcp_pose(arm))
+print(corners)
+#corners = generate_noisy_rectangle_corners(origin, 50, 60, 3)
+corners = find_corners(corners)
+poses = generate_scan_path(corners, origin, 5, 5)
+
 poses = palpation_path(poses, up, down)
 move_along_path(arm, origin, poses, speed)
 
